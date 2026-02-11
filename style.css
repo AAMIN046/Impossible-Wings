@@ -1,18 +1,34 @@
 body {
-  text-align: center;
-  background: linear-gradient(to bottom, #70c5ce, #ffffff);
-  font-family: Arial, sans-serif;
   margin: 0;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background: linear-gradient(to bottom, #87CEEB, #ffffff);
 }
 
-h1 {
+nav {
+  background: #222;
+  padding: 10px;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
   margin: 10px;
+  font-weight: bold;
+}
+
+nav a:hover {
+  color: yellow;
+}
+
+.container {
+  padding: 20px;
 }
 
 canvas {
   background: #70c5ce;
   display: block;
-  margin: 10px auto;
+  margin: 20px auto;
   border: 3px solid black;
 }
 
@@ -20,5 +36,11 @@ button {
   padding: 10px 20px;
   font-size: 18px;
   cursor: pointer;
-  margin-bottom: 10px;
+}
+
+footer {
+  margin-top: 40px;
+  padding: 15px;
+  background: #222;
+  color: white;
 }
