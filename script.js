@@ -4,74 +4,66 @@ const ctx = canvas.getContext("2d");
 canvas.width = 400;
 canvas.height = 600;
 
-/* ---------------- IMAGES ---------------- */
+/* BACKGROUND PARALLAX */
+let bgX = 0;
+let bgSpeed = 1;
 
-const bgImg = new Image();
-bgImg.src = "https://i.imgur.com/3e5p6kP.png"; // background
-
-const birdFrames = [];
-for (let i = 0; i < 3; i++) {
-  let img = new Image();
-  img.src = `https://i.imgur.com/QZ6XG5Q.png`; // same sprite (replace with 3 frame sprite if you want)
-  birdFrames.push(img);
-}
-
-/* ---------------- SOUNDS ---------------- */
-
+/* SOUNDS */
 const flapSound = new Audio("https://www.soundjay.com/button/sounds/button-16.mp3");
 const hitSound = new Audio("https://www.soundjay.com/button/sounds/button-10.mp3");
 
-/* ---------------- GAME VARIABLES ---------------- */
+/* MUSIC */
+const bgMusic = new Audio("https://www.soundjay.com/free-music/midnight-ride-01.mp3");
+bgMusic.loop = true;
+bgMusic.volume = 0.3;
 
+/* BIRD */
 let bird = {
   x: 60,
   y: 200,
-  width: 40,
+  width: 35,
   height: 30,
   gravity: 0.25,
   lift: -8,
-  velocity: 0,
-  frame: 0
+  velocity: 0
 };
 
 let pipes = [];
 let pipeWidth = 60;
 let pipeGap = 170;
-let frameCount = 0;
+let frame = 0;
 let score = 0;
 let highScore = localStorage.getItem("highScore") || 0;
 let level = 1;
 let speed = 2.5;
 let gameOver = false;
 
-/* ---------------- CONTROLS ---------------- */
-
+/* CONTROLS */
 function jump() {
   if (!gameOver) {
     bird.velocity = bird.lift;
     flapSound.play();
+    bgMusic.play();
   }
 }
 
 document.addEventListener("click", jump);
-document.addEventListener("keydown", (e) => {
+document.addEventListener("keydown", e => {
   if (e.code === "Space") jump();
 });
 
-/* ---------------- DRAW ---------------- */
-
+/* DRAW */
 function drawBackground() {
-  ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#70c5ce";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  bgX -= bgSpeed;
+  if (bgX <= -canvas.width) bgX = 0;
 }
 
 function drawBird() {
-  ctx.drawImage(
-    birdFrames[bird.frame],
-    bird.x,
-    bird.y,
-    bird.width,
-    bird.height
-  );
+  ctx.fillStyle = "yellow";
+  ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
 }
 
 function drawPipes() {
@@ -84,7 +76,7 @@ function drawPipes() {
 
 function drawText() {
   ctx.fillStyle = "black";
-  ctx.font = "20px Arial";
+  ctx.font = "18px Arial";
   ctx.fillText("Score: " + score, 10, 25);
   ctx.fillText("High: " + highScore, 10, 50);
   ctx.fillText("Level: " + level, 10, 75);
@@ -96,24 +88,15 @@ function drawText() {
   }
 }
 
-/* ---------------- UPDATE ---------------- */
-
+/* UPDATE */
 function update() {
   if (gameOver) return;
 
-  frameCount++;
-
-  // Bird physics
+  frame++;
   bird.velocity += bird.gravity;
   bird.y += bird.velocity;
 
-  // Bird flap animation
-  if (frameCount % 10 === 0) {
-    bird.frame = (bird.frame + 1) % birdFrames.length;
-  }
-
-  // Create pipes
-  if (frameCount % 100 === 0) {
+  if (frame % 100 === 0) {
     let top = Math.random() * (canvas.height - pipeGap - 100) + 50;
     pipes.push({
       x: canvas.width,
@@ -126,7 +109,6 @@ function update() {
   pipes.forEach(pipe => {
     pipe.x -= speed;
 
-    // Collision
     if (
       bird.x < pipe.x + pipeWidth &&
       bird.x + bird.width > pipe.x &&
@@ -136,12 +118,10 @@ function update() {
       hitSound.play();
     }
 
-    // Score
     if (!pipe.passed && pipe.x + pipeWidth < bird.x) {
       score++;
       pipe.passed = true;
 
-      // Level up every 5 points
       if (score % 5 === 0) {
         level++;
         speed += 0.5;
@@ -150,39 +130,37 @@ function update() {
     }
   });
 
-  // Ground collision
   if (bird.y + bird.height > canvas.height || bird.y < 0) {
     gameOver = true;
     hitSound.play();
   }
 
-  // High score save
   if (gameOver && score > highScore) {
     highScore = score;
     localStorage.setItem("highScore", highScore);
   }
+
+  if (score % 10 === 0 && score !== 0) {
+    canvas.style.filter = "brightness(0.6)";
+  } else {
+    canvas.style.filter = "brightness(1)";
+  }
 }
 
-/* ---------------- GAME LOOP ---------------- */
-
+/* LOOP */
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   drawBackground();
   update();
   drawBird();
   drawPipes();
   drawText();
-
   requestAnimationFrame(gameLoop);
 }
 
-bgImg.onload = function () {
-  gameLoop();
-};
+gameLoop();
 
-/* ---------------- RESTART ---------------- */
-
+/* RESTART */
 document.getElementById("restartBtn").addEventListener("click", () => {
   bird.y = 200;
   bird.velocity = 0;
@@ -191,6 +169,6 @@ document.getElementById("restartBtn").addEventListener("click", () => {
   level = 1;
   speed = 2.5;
   pipeGap = 170;
-  frameCount = 0;
+  frame = 0;
   gameOver = false;
 });
