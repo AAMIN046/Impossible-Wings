@@ -5,31 +5,32 @@ canvas.width = 400;
 canvas.height = 600;
 
 let bird = {
-  x: 50,
-  y: 150,
+  x: 60,
+  y: 200,
   width: 30,
   height: 30,
-  gravity: 0.6,
-  lift: -10,
+  gravity: 0.25,   // ✅ Gravity কমানো হয়েছে
+  lift: -8,        // Smooth jump
   velocity: 0
 };
 
 let pipes = [];
 let pipeWidth = 60;
-let pipeGap = 150;
+let pipeGap = 170;
 let frame = 0;
 let score = 0;
 let gameOver = false;
 
-// Bird Jump
-document.addEventListener("click", () => {
-  bird.velocity = bird.lift;
-});
-
-document.addEventListener("keydown", (e) => {
-  if (e.code === "Space") {
+// Jump control (Mobile + PC)
+function jump() {
+  if (!gameOver) {
     bird.velocity = bird.lift;
   }
+}
+
+document.addEventListener("click", jump);
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Space") jump();
 });
 
 function drawBird() {
@@ -54,19 +55,19 @@ function update() {
   bird.velocity += bird.gravity;
   bird.y += bird.velocity;
 
-  // Create pipes
-  if (frame % 90 === 0) {
-    let top = Math.random() * (canvas.height - pipeGap - 100) + 20;
+  // Create new pipe
+  if (frame % 100 === 0) {
+    let top = Math.random() * (canvas.height - pipeGap - 100) + 50;
     pipes.push({
       x: canvas.width,
       top: top,
-      bottom: top + pipeGap
+      bottom: top + pipeGap,
+      passed: false
     });
   }
 
-  // Move pipes
   pipes.forEach(pipe => {
-    pipe.x -= 3;
+    pipe.x -= 2.5;
 
     // Collision
     if (
@@ -77,13 +78,14 @@ function update() {
       gameOver = true;
     }
 
-    // Score
-    if (pipe.x === bird.x) {
+    // Score counting properly
+    if (!pipe.passed && pipe.x + pipeWidth < bird.x) {
       score++;
+      pipe.passed = true;
     }
   });
 
-  // Ground collision
+  // Ground or sky collision
   if (bird.y + bird.height > canvas.height || bird.y < 0) {
     gameOver = true;
   }
@@ -99,7 +101,7 @@ function drawGameOver() {
   if (gameOver) {
     ctx.fillStyle = "red";
     ctx.font = "40px Arial";
-    ctx.fillText("Game Over", 100, 300);
+    ctx.fillText("Game Over", 90, 300);
   }
 }
 
@@ -119,9 +121,10 @@ gameLoop();
 
 // Restart
 document.getElementById("restartBtn").addEventListener("click", () => {
-  bird.y = 150;
+  bird.y = 200;
   bird.velocity = 0;
   pipes = [];
   score = 0;
+  frame = 0;
   gameOver = false;
 });
