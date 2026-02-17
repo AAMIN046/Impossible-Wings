@@ -4,7 +4,7 @@ const ctx = canvas.getContext("2d");
 canvas.width = 400;
 canvas.height = 600;
 
-/* BACKGROUND PARALLAX */
+/* BACKGROUND */
 let bgX = 0;
 let bgSpeed = 1;
 
@@ -17,14 +17,14 @@ const bgMusic = new Audio("https://www.soundjay.com/free-music/midnight-ride-01.
 bgMusic.loop = true;
 bgMusic.volume = 0.3;
 
-/* BIRD */
+/* BIRD (SMOOTH PHYSICS) */
 let bird = {
   x: 60,
   y: 200,
   width: 35,
   height: 30,
-  gravity: 0.25,
-  lift: -8,
+  gravity: 0.18,   // Smooth gravity
+  lift: -6.5,      // Smooth jump
   velocity: 0
 };
 
@@ -42,6 +42,7 @@ let gameOver = false;
 function jump() {
   if (!gameOver) {
     bird.velocity = bird.lift;
+    flapSound.currentTime = 0;
     flapSound.play();
     bgMusic.play();
   }
@@ -52,20 +53,19 @@ document.addEventListener("keydown", e => {
   if (e.code === "Space") jump();
 });
 
-/* DRAW */
+/* DRAW BACKGROUND */
 function drawBackground() {
   ctx.fillStyle = "#70c5ce";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  bgX -= bgSpeed;
-  if (bgX <= -canvas.width) bgX = 0;
 }
 
+/* DRAW BIRD */
 function drawBird() {
   ctx.fillStyle = "yellow";
   ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
 }
 
+/* DRAW PIPES */
 function drawPipes() {
   ctx.fillStyle = "green";
   pipes.forEach(pipe => {
@@ -74,6 +74,7 @@ function drawPipes() {
   });
 }
 
+/* DRAW TEXT */
 function drawText() {
   ctx.fillStyle = "black";
   ctx.font = "18px Arial";
@@ -84,7 +85,9 @@ function drawText() {
   if (gameOver) {
     ctx.fillStyle = "red";
     ctx.font = "40px Arial";
-    ctx.fillText("Game Over", 90, 300);
+    ctx.fillText("Game Over", 80, 300);
+    ctx.font = "20px Arial";
+    ctx.fillText("Click to Restart", 115, 340);
   }
 }
 
@@ -93,9 +96,13 @@ function update() {
   if (gameOver) return;
 
   frame++;
+
+  // Smooth physics
   bird.velocity += bird.gravity;
+  bird.velocity *= 0.99; // Air resistance
   bird.y += bird.velocity;
 
+  // Generate pipes
   if (frame % 100 === 0) {
     let top = Math.random() * (canvas.height - pipeGap - 100) + 50;
     pipes.push({
@@ -109,6 +116,7 @@ function update() {
   pipes.forEach(pipe => {
     pipe.x -= speed;
 
+    // Collision
     if (
       bird.x < pipe.x + pipeWidth &&
       bird.x + bird.width > pipe.x &&
@@ -118,28 +126,32 @@ function update() {
       hitSound.play();
     }
 
+    // Score
     if (!pipe.passed && pipe.x + pipeWidth < bird.x) {
       score++;
       pipe.passed = true;
 
       if (score % 5 === 0) {
         level++;
-        speed += 0.5;
+        speed += 0.4;
         pipeGap -= 5;
       }
     }
   });
 
+  // Ground / Ceiling collision
   if (bird.y + bird.height > canvas.height || bird.y < 0) {
     gameOver = true;
     hitSound.play();
   }
 
+  // Save High Score
   if (gameOver && score > highScore) {
     highScore = score;
     localStorage.setItem("highScore", highScore);
   }
 
+  // Level brightness effect
   if (score % 10 === 0 && score !== 0) {
     canvas.style.filter = "brightness(0.6)";
   } else {
@@ -160,15 +172,18 @@ function gameLoop() {
 
 gameLoop();
 
-/* RESTART */
-document.getElementById("restartBtn").addEventListener("click", () => {
-  bird.y = 200;
-  bird.velocity = 0;
-  pipes = [];
-  score = 0;
-  level = 1;
-  speed = 2.5;
-  pipeGap = 170;
-  frame = 0;
-  gameOver = false;
+/* RESTART SYSTEM */
+document.addEventListener("click", () => {
+  if (gameOver) {
+    bird.y = 200;
+    bird.velocity = 0;
+    pipes = [];
+    score = 0;
+    level = 1;
+    speed = 2.5;
+    pipeGap = 170;
+    frame = 0;
+    gameOver = false;
+    canvas.style.filter = "brightness(1)";
+  }
 });
